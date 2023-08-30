@@ -105,6 +105,15 @@ const config = {
                 },
             },
         },
+        {
+            name: '@electron-forge/maker-flatpak',
+            config: {
+                name: 'chainner',
+                options: {
+                    icon: './src/public/icons/cross_platform/icon.png',
+                },
+            },
+        },
     ],
     plugins: [
         {
