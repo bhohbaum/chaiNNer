@@ -1,8 +1,9 @@
 import { NeverType } from '@chainner/navi';
 import { Center, Icon, IconButton } from '@chakra-ui/react';
+import { Bezier } from 'bezier-js';
 import { memo, useEffect, useMemo, useState } from 'react';
 import { TbUnlink } from 'react-icons/tb';
-import { EdgeProps, getBezierPath, useReactFlow } from 'reactflow';
+import { EdgeProps, Position, getBezierPath, useReactFlow } from 'reactflow';
 import { useContext, useContextSelector } from 'use-context-selector';
 import { useDebouncedCallback } from 'use-debounce';
 import { EdgeData, NodeData } from '../../../common/common-types';
@@ -15,6 +16,7 @@ import { getTypeAccentColors } from '../../helpers/accentColors';
 import { shadeColor } from '../../helpers/colorTools';
 import { useEdgeMenu } from '../../hooks/useEdgeMenu';
 import './CustomEdge.scss';
+import { getBezierPathValues } from '../../helpers/graphUtils';
 
 const EDGE_CLASS = {
     RUNNING: 'running',
@@ -170,6 +172,36 @@ export const CustomEdge = memo(
             [sourceX, sourceY, targetX, targetY]
         );
 
+        const bezierPathCoordinates = getBezierPathValues({
+            sourceX,
+            sourceY,
+            sourcePosition: Position.Right,
+            targetX,
+            targetY,
+            targetPosition: Position.Left,
+        });
+
+        // Here we use Bezier-js to determine if any of the node's sides intersect with the curve
+        const curve = new Bezier(bezierPathCoordinates);
+
+        const [percentage, setPercentage] = useState(0);
+        const [flip, setFlip] = useState(false);
+
+        useEffect(() => {
+            const interval = setInterval(() => {
+                // setPercentage((p) => (p + 0.01) % 1);
+                if (percentage > 1) {
+                    setFlip((f) => !f);
+                    setPercentage(0);
+                } else {
+                    setPercentage((p) => p + 0.01);
+                }
+            }, 5);
+            return () => clearInterval(interval);
+        }, [percentage]);
+
+        const { left, right } = curve.split(percentage);
+
         const menu = useEdgeMenu(id);
 
         return (
@@ -186,17 +218,15 @@ export const CustomEdge = memo(
                 onMouseLeave={() => setIsHovered(false)}
                 onMouseOver={() => hoverTimeout()}
             >
-                {showRunning && (
-                    <path
-                        className={`edge-chain-behind ${classModifier}`}
-                        d={edgePath}
-                        fill="none"
-                        id={id}
-                    />
-                )}
+                <path
+                    className={`edge-chain-behind ${classModifier}`}
+                    d={edgePath}
+                    fill="none"
+                    id={id}
+                />
                 <path
                     className={`edge-chain ${classModifier}`}
-                    d={edgePath}
+                    d={flip ? right.toSVG() : left.toSVG()}
                     fill="none"
                     id={id}
                     stroke={currentColor}
