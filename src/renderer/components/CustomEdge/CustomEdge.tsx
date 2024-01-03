@@ -194,9 +194,9 @@ export const CustomEdge = memo(
                     setFlip((f) => !f);
                     setPercentage(0);
                 } else {
-                    setPercentage((p) => p + 0.01);
+                    setPercentage((p) => p + 0.02);
                 }
-            }, 5);
+            }, 10);
             return () => clearInterval(interval);
         }, [percentage]);
 
